@@ -3,12 +3,27 @@
 #include "Eigen/Dense"
 #include "measurement_package.h"
 #include "ground_truth_package.h"
+#include "tools.h"
 #include <vector>
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
 class UKF {
+private:
+  // previous timestamp
+  long previous_timestamp_;
+
+  // noise
+  long noise_ax_, noise_ay_;
+
+  // tool object used to compute Jacobian and RMSE
+  Tools tools;
+  MatrixXd R_laser_;
+  MatrixXd R_radar_;
+  MatrixXd H_laser_;
+  MatrixXd Hj_;
+
 public:
 
   ///* initially set to false, set to true in first call of ProcessMeasurement
@@ -26,8 +41,32 @@ public:
   ///* state covariance matrix
   MatrixXd P_;
 
+  // state transistion matrix
+  MatrixXd F_;
+
+  // process covariance matrix
+  MatrixXd Q_;
+
+  // measurement matrix
+  MatrixXd H_;
+
+  // measurement covariance matrix
+  MatrixXd R_;
+
+  // S
+  MatrixXd S_;
+
+  ///* generated sigma points matrix
+  MatrixXd Xsig_;
+
   ///* predicted sigma points matrix
   MatrixXd Xsig_pred_;
+
+  ///* sigma points in measurement space
+  MatrixXd Zsig_;
+
+  ///* predicted measurement
+  VectorXd z_pred_;
 
   ///* time when the state is true, in us
   long time_us_;
@@ -110,12 +149,12 @@ public:
   /**
    * Student assignment functions
    */
-  void GenerateSigmaPoints(MatrixXd* Xsig_out);
-  void AugmentedSigmaPoints(MatrixXd* Xsig_out);
-  void SigmaPointPrediction(MatrixXd* Xsig_out);
-  void PredictMeanAndCovariance(VectorXd* x_pred, MatrixXd* P_pred);
-  void PredictRadarMeasurement(VectorXd* z_out, MatrixXd* S_out);
-  void UpdateState(VectorXd* x_out, MatrixXd* P_out);
+  void GenerateSigmaPoints();
+  void AugmentedSigmaPoints();
+  void SigmaPointPrediction(double delta_t);
+  void PredictMeanAndCovariance();
+  void PredictRadarMeasurement();
+  void UpdateState();
 
 };
 
