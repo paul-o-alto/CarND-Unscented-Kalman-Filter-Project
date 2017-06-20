@@ -1,10 +1,13 @@
 #ifndef UKF_H
 #define UKF_H
-#include "Eigen/Dense"
+
 #include "measurement_package.h"
 #include "ground_truth_package.h"
 #include "tools.h"
+#include "Eigen/Dense"
 #include <vector>
+#include <string>
+#include <fstream>
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
@@ -69,7 +72,7 @@ public:
   VectorXd z_pred_;
 
   ///* time when the state is true, in us
-  long time_us_;
+  long long time_us_;
 
   ///* Process noise standard deviation longitudinal acceleration in m/s^2
   double std_a_;
@@ -104,11 +107,6 @@ public:
   ///* Sigma point spreading parameter
   double lambda_;
 
-  ///* the current NIS for radar
-  double NIS_radar_;
-
-  ///* the current NIS for laser
-  double NIS_laser_;
 
   /**
    * Constructor
@@ -123,7 +121,6 @@ public:
   /**
    * ProcessMeasurement
    * @param meas_package The latest measurement data of either radar or laser
-   * @param gt_package The ground truth of the state x at measurement time
    */
   void ProcessMeasurement(MeasurementPackage meas_package);
 
