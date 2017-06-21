@@ -2,8 +2,6 @@
 #define UKF_H
 
 #include "measurement_package.h"
-#include "ground_truth_package.h"
-#include "tools.h"
 #include "Eigen/Dense"
 #include <vector>
 #include <string>
@@ -13,20 +11,6 @@ using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
 class UKF {
-private:
-  // previous timestamp
-  long previous_timestamp_;
-
-  // noise
-  long noise_ax_, noise_ay_;
-
-  // tool object used to compute Jacobian and RMSE
-  Tools tools;
-  MatrixXd R_laser_;
-  MatrixXd R_radar_;
-  MatrixXd H_laser_;
-  MatrixXd Hj_;
-
 public:
 
   ///* initially set to false, set to true in first call of ProcessMeasurement
@@ -146,12 +130,12 @@ public:
   /**
    * Student assignment functions
    */
-  void GenerateSigmaPoints();
-  void AugmentedSigmaPoints();
-  void SigmaPointPrediction(double delta_t);
+  void GenerateSigmaPoints(MatrixXd* Xsig_out);
+  void AugmentedSigmaPoints(MatrixXd* Xsig_out);
+  void SigmaPointPrediction(double delta_t, MatrixXd* Xsig_in);
   void PredictMeanAndCovariance();
   void PredictRadarMeasurement();
-  void UpdateState();
+  void UpdateState(VectorXd z, int n_z);
 
 };
 
