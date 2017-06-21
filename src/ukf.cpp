@@ -26,10 +26,10 @@ UKF::UKF() {
   P_ = MatrixXd(5, 5);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
-  std_a_ = 0.8;
+  std_a_ = 0.4;
 
   // Process noise standard deviation yaw acceleration in rad/s^2
-  std_yawdd_ = 0.2;
+  std_yawdd_ = 0.5;
 
   // Laser measurement noise standard deviation position1 in m
   std_laspx_ = 0.15;
@@ -91,9 +91,9 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
     /* Create the covariance matrix. */
     this->P_ << 1, 0, 0, 0, 0,
                 0, 1, 0, 0, 0,
-                0, 0, 1, 0, 0,
-                0, 0, 0, 1, 0,
-                0, 0, 0, 0, 1;
+                0, 0, 30, 0, 0,
+                0, 0, 0, 2.*M_PI, 0,
+                0, 0, 0, 0, 2.*M_PI; 
 
 
     // first measurement
@@ -103,11 +103,11 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
       VectorXd polar(3);
       polar << meas_package.raw_measurements_[0], meas_package.raw_measurements_[1], meas_package.raw_measurements_[2];
       std::cout << "Converting polar to cartesian and Initializing state" << std::endl;
-      this->x_ << polar[0]*cos(polar[1]), polar[0]*sin(polar[1]), 0, 0, 0;
+      this->x_ << polar[0]*cos(polar[1]), polar[0]*sin(polar[1]), 0,0,0;
     }
     else if (meas_package.sensor_type_ == MeasurementPackage::LASER) {
       std::cout << "Initializing state." << std::endl;
-      this->x_ << meas_package.raw_measurements_[0], meas_package.raw_measurements_[1], 0, 0, 0;
+      this->x_ << meas_package.raw_measurements_[0], meas_package.raw_measurements_[1], 0,0,0;
     }
 
     cout << "Done initializing, no need to predict or update" << endl;
@@ -564,7 +564,7 @@ void UKF::UpdateState(VectorXd z, int n_z) {
   VectorXd diff = z_diff.col(0); //Zsig_.col(0) - z_pred_;
   VectorXd temp = diff.transpose()*S_.inverse();
   double nis = temp.dot(diff);
-  cout << nis << endl;
+  //cout << nis << endl;
   if (n_z == 3) {
       NIS_radar_ = nis;
   } else if (n_z == 2) {
