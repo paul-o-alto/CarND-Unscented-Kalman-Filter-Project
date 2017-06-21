@@ -26,7 +26,7 @@ UKF::UKF() {
   P_ = MatrixXd(5, 5);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
-  std_a_ = 0.2;
+  std_a_ = 0.4;
 
   // Process noise standard deviation yaw acceleration in rad/s^2
   std_yawdd_ = 0.2;
@@ -91,11 +91,11 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 
     /* Create the covariance matrix. */
     //this->P_ = MatrixXd(5, 5);
-    this->P_ << 0.01, 0, 0, 0, 0,
-                0, 0.01, 0, 0, 0,
-                0, 0, 0.01, 0, 0,
-                0, 0, 0, 0.01, 0,
-                0, 0, 0, 0, 0.01;
+    this->P_ << 0.1, 0, 0, 0, 0,
+                0, 0.1, 0, 0, 0,
+                0, 0, 0.1, 0, 0,
+                0, 0, 0, 0.1, 0,
+                0, 0, 0, 0, 0.1;
 
 
     // first measurement
@@ -521,8 +521,8 @@ void UKF::PredictMeasurement(int n_z) {
           0, this->std_radphi_*this->std_radphi_, 0,
           0, 0, this->std_radrd_*this->std_radrd_;
   } else if (n_z == 2) {
-    R << this->std_laspx_, 0,
-         0, this->std_laspy_;
+    R << this->std_laspx_*this->std_laspx_, 0,
+         0, this->std_laspy_*this->std_laspy_;
   }
   S = S + R;
 
