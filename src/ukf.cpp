@@ -66,20 +66,8 @@ UKF::UKF() {
               0, 0, 1, 0,
               0, 0, 0, 1;
 
-
-  //measurement covariances
-  this->std_laspx_ = 0;
-  this->std_laspy_ = 0; //0.0225 or sqrt(0.0225)?
-  
-  this->std_radr_   = 0.3;
-  this->std_radphi_ = 0.0175;
-  this->std_radrd_  = 0.1; //0.225 or sqrt(0.225)?
-
   this->Q_ = MatrixXd(4, 4);
 
-  //set the acceleration noise components
-  //noise_ax_ = 5;
-  //noise_ay_ = 5;
 
 }
 
@@ -109,7 +97,6 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
                 0, 0, 0, 0.01, 0,
                 0, 0, 0, 0, 0.01;
 
-    /* TODO Remember: you'll need to convert radar from polar to cartesian coordinates. */
 
     // first measurement
     std::cout << "UKF: " << std::endl;
@@ -189,7 +176,7 @@ void UKF::Prediction(double delta_t) {
   cout << "Predict sigma points" << endl;
   this->SigmaPointPrediction(delta_t, &Xsig_out);
 
-  cout << "Predict mean and covariance" << endl;
+  //cout << "Predict mean and covariance" << endl;
   //VectorXd x_pred = VectorXd(5);
   //MatrixXd P_pred = MatrixXd(5, 5);
   this->PredictMeanAndCovariance(); 
@@ -211,14 +198,14 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   */
 
   cout << "Predict Lidar measurement" << endl;
-  //this->PredictMeanAndCovariance();
+  this->PredictMeasurement(2);
 
-  VectorXd z(5);
+  VectorXd z(2);
   cout << "Getting Lidar measurement for Update step." << std::endl;
-  z << meas_package.raw_measurements_[0], meas_package.raw_measurements_[1], 0, 0, 0;
+  z << meas_package.raw_measurements_[0], meas_package.raw_measurements_[1];
 
   cout << "Update state" << endl;
-  this->UpdateState(z, 5);
+  this->UpdateState(z, 2);
 
   // Calculate lidar NIS
 }
@@ -238,7 +225,7 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
   */
 
   cout << "Predict Radar measurement" << endl;
-  this->PredictRadarMeasurement();
+  this->PredictMeasurement(3);
 
   //VectorXd z(5);
   VectorXd polar(3);
@@ -449,10 +436,10 @@ void UKF::PredictMeanAndCovariance() {
   std::cout << this->P_ << std::endl;
 
   Zsig_ = Xsig_pred_;
-  z_pred_ = this->x_;
+  //z_pred_ = this->x_;
 }
 
-void UKF::PredictRadarMeasurement() {
+void UKF::PredictMeasurement(int n_z) {
 
   //set state dimension
   int n_x = 5;
@@ -461,7 +448,7 @@ void UKF::PredictRadarMeasurement() {
   int n_aug = 7;
 
   //set measurement dimension, radar can measure r, phi, and r_dot
-  int n_z = 3;
+  //int n_z = 3;
 
   //define spreading parameter
   double lambda = 3 - n_aug;
@@ -494,9 +481,16 @@ void UKF::PredictRadarMeasurement() {
     double v2 = sin(yaw)*v;
 
     // measurement model
-    Zsig_(0,i) = sqrt(p_x*p_x + p_y*p_y);                        //r
-    Zsig_(1,i) = atan2(p_y,p_x);                                 //phi
-    Zsig_(2,i) = (p_x*v1 + p_y*v2 ) / sqrt(p_x*p_x + p_y*p_y);   //r_dot
+    if (n_z == 3) {
+        Zsig_(0,i) = sqrt(p_x*p_x + p_y*p_y);                        //r
+        Zsig_(1,i) = atan2(p_y,p_x);                                 //phi
+        Zsig_(2,i) = (p_x*v1 + p_y*v2 ) / sqrt(p_x*p_x + p_y*p_y);   //r_dot
+    } else if (n_z == 2) {
+        Zsig_(0,i) = p_x;
+        Zsig_(1,i) = p_y;
+        //Zsig_(2,i) = v1;
+        //Zsig_(3,i) = v2;
+    }
   }
 
   //mean predicted measurement
@@ -522,9 +516,14 @@ void UKF::PredictRadarMeasurement() {
 
   //add measurement noise covariance matrix
   MatrixXd R = MatrixXd(n_z,n_z);
-  R <<    this->std_radr_*this->std_radr_, 0, 0,
+  if (n_z == 3) {
+    R <<  this->std_radr_*this->std_radr_, 0, 0,
           0, this->std_radphi_*this->std_radphi_, 0,
           0, 0, this->std_radrd_*this->std_radrd_;
+  } else if (n_z == 2) {
+    R << this->std_laspx_, 0,
+         0, this->std_laspy_;
+  }
   S = S + R;
 
   //print result
