@@ -26,10 +26,10 @@ UKF::UKF() {
   P_ = MatrixXd(5, 5);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
-  std_a_ = 15; //30; //0.4;
+  std_a_ = 0.8;
 
   // Process noise standard deviation yaw acceleration in rad/s^2
-  std_yawdd_ = 6; //30; //0.2;
+  std_yawdd_ = 0.2;
 
   // Laser measurement noise standard deviation position1 in m
   std_laspx_ = 0.15;
@@ -66,7 +66,6 @@ UKF::UKF() {
               0, 0, 1, 0,
               0, 0, 0, 1;
 
-  //this->Q_ = MatrixXd(4, 4);
 
 
 }
@@ -90,11 +89,11 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
     
 
     /* Create the covariance matrix. */
-    this->P_ << 10, 0, 0, 0, 0,
-                0, 10, 0, 0, 0,
-                0, 0, 10, 0, 0,
-                0, 0, 0, 10, 0,
-                0, 0, 0, 0, 10;
+    this->P_ << 1, 0, 0, 0, 0,
+                0, 1, 0, 0, 0,
+                0, 0, 1, 0, 0,
+                0, 0, 0, 1, 0,
+                0, 0, 0, 0, 1;
 
 
     // first measurement
@@ -124,10 +123,6 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 
   this->F_(0, 2) = dt;
   this->F_(1, 3) = dt;
-
-  float dt_2 = dt * dt;
-  float dt_3 = dt_2 * dt;
-  float dt_4 = dt_3 * dt;
 
 
   //std::cout << "Performing prediction step" << std::endl;
@@ -181,7 +176,7 @@ void UKF::Prediction(double delta_t) {
  * Updates the state and the state covariance matrix using a laser measurement.
  * @param {MeasurementPackage} meas_package
  */
-void UKF::UpdateLidar(MeasurementPackage meas_package) {
+void UKF::UpdateLidar(MeasurementPackage m) {
   /**
   TODO:
 
@@ -196,7 +191,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
 
   VectorXd z(2);
   //cout << "Getting Lidar measurement for Update step." << std::endl;
-  z << meas_package.raw_measurements_[0], meas_package.raw_measurements_[1];
+  z << m.raw_measurements_[0], m.raw_measurements_[1];
 
   //cout << "Update state" << endl;
   this->UpdateState(z, 2);
@@ -207,7 +202,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
  * Updates the state and the state covariance matrix using a radar measurement.
  * @param {MeasurementPackage} meas_package
  */
-void UKF::UpdateRadar(MeasurementPackage meas_package) {
+void UKF::UpdateRadar(MeasurementPackage m) {
   /**
   TODO:
 
@@ -221,7 +216,7 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
   this->PredictMeasurement(3);
 
   VectorXd polar(3);
-  polar << meas_package.raw_measurements_[0], meas_package.raw_measurements_[1], meas_package.raw_measurements_[2];
+  polar << m.raw_measurements_[0], m.raw_measurements_[1], m.raw_measurements_[2];
 
   //cout << "Update state" << endl;
   this->UpdateState(polar, 3);
@@ -384,9 +379,6 @@ void UKF::PredictMeanAndCovariance() {
   //define spreading parameter
   double lambda = 3 - n_aug;
 
-  //create example matrix with predicted sigma points
-  //Xsig_pred_ = MatrixXd(n_x, 2 * n_aug + 1);
-
   //create vector for weights
   VectorXd weights = VectorXd(2*n_aug+1);
   
@@ -434,9 +426,6 @@ void UKF::PredictMeasurement(int n_z) {
 
   //set augmented dimension
   int n_aug = 7;
-
-  //set measurement dimension, radar can measure r, phi, and r_dot
-  //int n_z = 3;
 
   //define spreading parameter
   double lambda = 3 - n_aug;
@@ -572,7 +561,7 @@ void UKF::UpdateState(VectorXd z, int n_z) {
   while (z_diff(1)<-M_PI) z_diff(1)+=2.*M_PI;
 
   //NIS Calculation
-  VectorXd diff = Zsig_.col(0) - z_pred_;
+  VectorXd diff = z_diff.col(0); //Zsig_.col(0) - z_pred_;
   VectorXd temp = diff.transpose()*S_.inverse();
   double nis = temp.dot(diff);
   cout << nis << endl;
